@@ -1,54 +1,68 @@
 import os
+import argparse
 import json
+from tqdm import tqdm
+from glob import glob
 import numpy as np
 import h5py
-from joblib import Parallel, delayed
 import sys
 sys.path.append("..")
 from cadlib.extrude import CADSequence
 from cadlib.macro import *
+import open3d as o3d
 
-DATA_ROOT = "../data"
-RAW_DATA = os.path.join(DATA_ROOT, "cad_json")
-RECORD_FILE = os.path.join(DATA_ROOT, "train_val_test_split.json")
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_dir",help="Input directory for json files")
+    parser.add_argument("--output_dir",help="Output directory for h5 files")
+    args=parser.parse_args()
 
-SAVE_DIR = os.path.join(DATA_ROOT, "cad_vec")
-print(SAVE_DIR)
-if not os.path.exists(SAVE_DIR):
-    os.makedirs(SAVE_DIR)
+    JSON_PATH=os.path.join(args.input_dir+"*/*/*/*")
+    SAVE_DIR=args.output_dir
+
+    allJsonFiles = glob(JSON_PATH)
+    for js in tqdm(allJsonFiles):
+        process_one(js,SAVE_DIR)
 
 
-def process_one(data_id):
-    json_path = os.path.join(RAW_DATA, data_id + ".json")
+def process_one(json_path,save_dir):
+    json_id=json_path.split('/')[-1].split('.')[0]
     with open(json_path, "r") as fp:
         data = json.load(fp)
 
     try:
         cad_seq = CADSequence.from_dict(data)
+        # TASK: Sample Points
+        
+        #sample_points =cad_seq.sample_points()
+        #pcd=o3d.geometry.PointCloud()
+        #pcd.points=o3d.utility.Vector3dVector3d(sample_points)
+
+        # TASK: Normalize 
         cad_seq.normalize()
         cad_seq.numericalize()
-        cad_vec = cad_seq.to_vector(MAX_N_EXT, MAX_N_LOOPS, MAX_N_CURVES, MAX_TOTAL_LEN, pad=False)
+        cad_vec = cad_seq.to_vector(MAX_N_EXT, MAX_N_LOOPS, MAX_N_CURVES, None, pad=False)
 
     except Exception as e:
-        print("failed:", data_id)
+        print("failed:", json_path)
         return
 
-    if MAX_TOTAL_LEN < cad_vec.shape[0] or cad_vec is None:
-        print("exceed length condition:", data_id, cad_vec.shape[0])
-        return
-
-    save_path = os.path.join(SAVE_DIR, data_id + ".h5")
+    # WORK ON SUBDIR
+    subdir=""
+    save_path = os.path.join(save_dir,subdir, json_id + ".h5")
+    pc_path= os.path.join(save_dir,subdir, json_id + ".ply")
     truck_dir = os.path.dirname(save_path)
+
     if not os.path.exists(truck_dir):
         os.makedirs(truck_dir)
 
+    if not os.path.exists(os.makedirs(pc_path)):
+        os.makedirs(os.makedirs(pc_path))
+
+    #o3d.io.write_point_cloud(pc_path,pcd)
     with h5py.File(save_path, 'w') as fp:
         fp.create_dataset("vec", data=cad_vec, dtype=np.int)
 
 
-with open(RECORD_FILE, "r") as fp:
-    all_data = json.load(fp)
-
-Parallel(n_jobs=10, verbose=2)(delayed(process_one)(x) for x in all_data["train"])
-Parallel(n_jobs=10, verbose=2)(delayed(process_one)(x) for x in all_data["validation"])
-Parallel(n_jobs=10, verbose=2)(delayed(process_one)(x) for x in all_data["test"])
+if __name__ == '__main__':
+    main()

@@ -32,11 +32,12 @@ class CoordSystem(object):
 
     @staticmethod
     def from_dict(stat):
+        # TASK: WORK HERE in the coordinate
         origin = np.array([stat["origin"]["x"], stat["origin"]["y"], stat["origin"]["z"]])
-        normal_3d = np.array([stat["z_axis"]["x"], stat["z_axis"]["y"], stat["z_axis"]["z"]])
-        x_axis_3d = np.array([stat["x_axis"]["x"], stat["x_axis"]["y"], stat["x_axis"]["z"]])
-        y_axis_3d = np.array([stat["y_axis"]["x"], stat["y_axis"]["y"], stat["y_axis"]["z"]])
-        theta, phi, gamma = polar_parameterization(normal_3d, x_axis_3d)
+        #normal_3d = np.array([stat["z_axis"]["x"], stat["z_axis"]["y"], stat["z_axis"]["z"]])
+        #x_axis_3d = np.array([stat["x_axis"]["x"], stat["x_axis"]["y"], stat["x_axis"]["z"]])
+        #y_axis_3d = np.array([stat["y_axis"]["x"], stat["y_axis"]["y"], stat["y_axis"]["z"]])
+        heta, phi, gamma = polar_parameterization(normal_3d, x_axis_3d)
         return CoordSystem(origin, theta, phi, gamma, y_axis=cartesian2polar(y_axis_3d))
 
     @staticmethod
@@ -113,7 +114,7 @@ class Extrude(object):
             list: one or more Extrude instances
         """
         extrude_entity = all_stat["entities"][extrude_id]
-        assert extrude_entity["start_extent"]["type"] == "ProfilePlaneStartDefinition"
+        #assert extrude_entity["start_extent"]["type"] == "ProfilePlaneStartDefinition"
 
         all_skets = []
         n = len(extrude_entity["profiles"])
@@ -126,10 +127,10 @@ class Extrude(object):
             point = sket_profile.start_point
             sket_pos = point[0] * sket_plane.x_axis + point[1] * sket_plane.y_axis + sket_plane.origin
             sket_size = sket_profile.bbox_size
-            sket_profile.normalize(sketch_dim)
+            #sket_profile.normalize(sketch_dim)
             all_skets.append((sket_profile, sket_plane, sket_pos, sket_size))
 
-        operation = EXTRUDE_OPERATIONS.index(extrude_entity["operation"])
+        operation = EXTRUDE_OPERATIONS.index(extrude_entity["boolean"])
         extent_type = EXTENT_TYPE.index(extrude_entity["extent_type"])
         extent_one = extrude_entity["extent_one"]["distance"]["value"]
         extent_two = 0.0
@@ -236,8 +237,8 @@ class CADSequence(object):
     def from_dict(all_stat):
         """construct CADSequence from json data"""
         seq = []
-        for item in all_stat["sequence"]:
-            if item["type"] == "ExtrudeFeature":
+        for item in all_stat["entities"]:
+            if CADSequence.get_item_type(item) == "ExtrudeFeature":
                 extrude_ops = Extrude.from_dict(all_stat, item["entity"])
                 seq.extend(extrude_ops)
         bbox_info = all_stat["properties"]["bounding_box"]
@@ -245,7 +246,9 @@ class CADSequence(object):
         min_point = np.array([bbox_info["min_point"]["x"], bbox_info["min_point"]["y"], bbox_info["min_point"]["z"]])
         bbox = np.stack([max_point, min_point], axis=0)
         return CADSequence(seq, bbox)
-
+    @staticmethod
+    def get_item_type(item):
+        
     @staticmethod
     def from_vector(vec, is_numerical=False, n=256):
         commands = vec[:, 0]

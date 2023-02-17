@@ -121,7 +121,8 @@ class Loop(SketchBase):
     def from_dict(stat):
         all_curves = [construct_curve_from_dict(item) for item in stat['profile_curves']]
         this_loop = Loop(all_curves)
-        this_loop.is_outer = stat['is_outer']
+        this_loop.is_outer = stat['isOuter']
+        this_loop.is_closed = stat['isClosed']
         return this_loop
 
     def __str__(self):

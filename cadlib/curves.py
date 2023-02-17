@@ -7,14 +7,14 @@ from .macro import *
 
 # FIXME: these two functions can be treated as static method
 def construct_curve_from_dict(stat):
-    if stat['type'] == "Line3D":
+    if stat['stype'] == "LineSegment":
         return Line.from_dict(stat)
-    elif stat['type'] == "Circle3D":
+    elif stat['stype'] == "CircleSegment":
         return Circle.from_dict(stat)
-    elif stat['type'] == "Arc3D":
+    elif stat['stype'] == "ArcSegment":
         return Arc.from_dict(stat)
     else:
-        raise NotImplementedError("curve type not supported yet: {}".format(stat['type']))
+        raise NotImplementedError("curve type not supported yet: {}".format(stat['stype']))
 
 
 def construct_curve_from_vector(vec, start_point, is_numerical=True):
@@ -98,11 +98,11 @@ class Line(CurveBase):
 
     @staticmethod
     def from_dict(stat):
-        assert stat['type'] == "Line3D"
-        start_point = np.array([stat['start_point']['x'],
-                                stat['start_point']['y']])
-        end_point = np.array([stat['end_point']['x'],
-                              stat['end_point']['y']])
+        assert stat['type'] == "LineSegment"
+        start_point = np.array([stat['line']['start']['x'],
+                                stat['line']['start']['y']])
+        end_point = np.array([stat['line']['end']['x'],
+                              stat['line']['end']['y']])
         return Line(start_point, end_point)
 
     @staticmethod
@@ -176,16 +176,16 @@ class Arc(CurveBase):
     @staticmethod
     def from_dict(stat):
         assert stat['type'] == "Arc3D"
-        start_point = np.array([stat['start_point']['x'],
-                                stat['start_point']['y']])
-        end_point = np.array([stat['end_point']['x'],
-                              stat['end_point']['y']])
-        center = np.array([stat['center_point']['x'],
-                           stat['center_point']['y']])
-        radius = stat['radius']
-        normal = np.array([stat['normal']['x'],
-                           stat['normal']['y'],
-                           stat['normal']['z']])
+        start_point = np.array([stat['arc']['start']['x'],
+                                stat['arc']['start']['y']])
+        end_point = np.array([stat['arc']['end']['x'],
+                              stat['arc']['end']['y']])
+        center = np.array([stat['arc']['center']['x'],
+                           stat['arc']['center']['y']])
+        radius = stat['arc']['radius']
+        normal = np.array([stat['arc']['normal']['x'],
+                           stat['arc']['normal']['y'],
+                           stat['arc']['normal']['z']])
         start_angle = stat['start_angle']
         end_angle = stat['end_angle']
         ref_vec = np.array([stat['reference_vector']['x'],
@@ -354,13 +354,13 @@ class Circle(CurveBase):
 
     @staticmethod
     def from_dict(stat):
-        assert stat['type'] == "Circle3D"
-        center = np.array([stat['center_point']['x'],
-                           stat['center_point']['y']])
-        radius = stat['radius']
-        normal = np.array([stat['normal']['x'],
-                           stat['normal']['y'],
-                           stat['normal']['z']])
+        assert stat['type'] == "CircleSegment"
+        center = np.array([stat['circle']['center']['x'],
+                           stat['circle']['center']['y']])
+        radius = stat['circle']['radius']
+        normal = np.array([stat['circle']['normal']['x'],
+                           stat['circle']['normal']['y'],
+                           stat['circle']['normal']['z']])
         return Circle(center, radius, normal)
 
     @staticmethod

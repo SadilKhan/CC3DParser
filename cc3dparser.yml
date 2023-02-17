@@ -1,0 +1,10 @@
+name: cc3dparser
+channels:
+    - conda-forge
+    - defaults
+dependencies:
+    - python=3.9
+    - numpy
+    - open3d
+    - tqdm
+    - h5py
