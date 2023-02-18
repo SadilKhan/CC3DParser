@@ -44,7 +44,7 @@ def process_one(json_path,save_dir):
         cad_vec = cad_seq.to_vector(MAX_N_EXT, MAX_N_LOOPS, MAX_N_CURVES, None, pad=False)
 
     except Exception as e:
-        print("failed:", json_path)
+        print("failed:", e)
         return
 
     # WORK ON SUBDIR

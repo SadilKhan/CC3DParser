@@ -1,6 +1,7 @@
 import numpy as np
 
 ALL_COMMANDS = ['Line', 'Arc', 'Circle', 'EOS', 'SOL', 'Ext']
+CURVES = ['LineSegment','ArcSegment','CircleSegment']
 LINE_IDX = ALL_COMMANDS.index('Line')
 ARC_IDX = ALL_COMMANDS.index('Arc')
 CIRCLE_IDX = ALL_COMMANDS.index('Circle')

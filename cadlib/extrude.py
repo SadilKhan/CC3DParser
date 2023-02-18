@@ -32,7 +32,7 @@ class CoordSystem(object):
 
     @staticmethod
     def from_dict(stat):
-        # TASK: WORK HERE in the coordinate
+        # TODO: WORK HERE ---------------->
         origin = np.array([stat["origin"]["x"], stat["origin"]["y"], stat["origin"]["z"]])
         #normal_3d = np.array([stat["z_axis"]["x"], stat["z_axis"]["y"], stat["z_axis"]["z"]])
         #x_axis_3d = np.array([stat["x_axis"]["x"], stat["x_axis"]["y"], stat["x_axis"]["z"]])
@@ -113,15 +113,17 @@ class Extrude(object):
         Returns:
             list: one or more Extrude instances
         """
+        # TODO: WORK HERE ---------------->
+
         extrude_entity = all_stat["entities"][extrude_id]
         #assert extrude_entity["start_extent"]["type"] == "ProfilePlaneStartDefinition"
 
         all_skets = []
-        n = len(extrude_entity["profiles"])
-        for i in range(len(extrude_entity["profiles"])):
-            sket_id, profile_id = extrude_entity["profiles"][i]["sketch"], extrude_entity["profiles"][i]["profile"]
-            sket_entity = all_stat["entities"][sket_id]
-            sket_profile = Profile.from_dict(sket_entity["profiles"][profile_id])
+        n = len(extrude_entity["feature"]['extrude']["references"]) # Number of sketches(in most cases it's 1)
+        for i in range(n):
+            sketch_id= extrude_entity["feature"]["extrude"]["references"][i]
+            sket_entity = all_stat["entities"][Extrude.get_sketch_id(all_stat,sketch_id)]['sketch']
+            sket_profile = Profile.from_dict(sket_entity)
             sket_plane = CoordSystem.from_dict(sket_entity["transform"])
             # normalize profile
             point = sket_profile.start_point
@@ -144,6 +146,12 @@ class Extrude(object):
 
         return [Extrude(all_skets[i][0], all_skets[i][1], all_operations[i], extent_type, extent_one, extent_two,
                         all_skets[i][2], all_skets[i][3]) for i in range(n)]
+    @staticmethod
+    def get_sketch_id(all_stat,sketch_id):
+        for tm in all_stat["timeline"]:
+            if tm['uuid']==sketch_id:
+                return tm['index']
+        return None
 
     @staticmethod
     def from_vector(vec, is_numerical=False, n=256):
@@ -225,6 +233,10 @@ class Extrude(object):
             pad_len = max_n_loops * max_len_loop - vec.shape[0]
             vec = np.concatenate([vec, EOS_VEC[np.newaxis].repeat(pad_len, axis=0)], axis=0)
         return vec
+    
+    def sample_points():
+        # TODO: WORK HERE ---------------->
+        pass
 
 
 class CADSequence(object):
@@ -237,18 +249,39 @@ class CADSequence(object):
     def from_dict(all_stat):
         """construct CADSequence from json data"""
         seq = []
+        # CAD Sequence consists of a list of Extrude Objects.
         for item in all_stat["entities"]:
-            if CADSequence.get_item_type(item) == "ExtrudeFeature":
-                extrude_ops = Extrude.from_dict(all_stat, item["entity"])
+            item_id=CADSequence.get_extrusion_id(item)
+            item_index=CADSequence.get_extrusion_index(item)
+            if not item_index:
+                raise KeyError("Key Mismatch")
+            if item_id == "ExtrudeFeature":
+                extrude_ops = Extrude.from_dict(all_stat, item_id)
                 seq.extend(extrude_ops)
-        bbox_info = all_stat["properties"]["bounding_box"]
-        max_point = np.array([bbox_info["max_point"]["x"], bbox_info["max_point"]["y"], bbox_info["max_point"]["z"]])
-        min_point = np.array([bbox_info["min_point"]["x"], bbox_info["min_point"]["y"], bbox_info["min_point"]["z"]])
-        bbox = np.stack([max_point, min_point], axis=0)
+
+        # bbox_info = all_stat["properties"]["bounding_box"]
+        # max_point = np.array([bbox_info["max_point"]["x"], bbox_info["max_point"]["y"], bbox_info["max_point"]["z"]])
+        # min_point = np.array([bbox_info["min_point"]["x"], bbox_info["min_point"]["y"], bbox_info["min_point"]["z"]])
+        # bbox = np.stack([max_point, min_point], axis=0)
         return CADSequence(seq, bbox)
+
     @staticmethod
-    def get_item_type(item):
-        
+    def get_extrusion_index(all_stat,item_id):
+        """ Get the index of the extrusion gived the id"""
+        for tm in all_stat['timeline']:
+            if tm['uuid']==item_id:
+                return tm['index']
+        return None
+    @staticmethod
+    def get_extrusion_id(item):
+        """
+        Returns the extrusion id
+        """
+        key_=item.keys()
+        if key_=="feature":
+            return item[key_]
+        return "Sketch"
+
     @staticmethod
     def from_vector(vec, is_numerical=False, n=256):
         commands = vec[:, 0]

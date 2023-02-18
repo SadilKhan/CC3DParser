@@ -118,11 +118,11 @@ class SketchBase(object):
 class Loop(SketchBase):
     """Sketch loop, a sequence of connected curves."""
     @staticmethod
-    def from_dict(stat):
-        all_curves = [construct_curve_from_dict(item) for item in stat['profile_curves']]
+    def from_dict(curveStat,profileStat):
+        all_curves = [construct_curve_from_dict(item) for item in profileStat['curves']]
+        this_loop.is_outer = curveStat['isOuter']
+        this_loop.is_closed = curveStat['isClosed']
         this_loop = Loop(all_curves)
-        this_loop.is_outer = stat['isOuter']
-        this_loop.is_closed = stat['isClosed']
         return this_loop
 
     def __str__(self):
@@ -130,6 +130,7 @@ class Loop(SketchBase):
         for curve in self.children:
             s += "\n      -" + str(curve)
         return s
+    
 
     @staticmethod
     def from_vector(vec, start_point=None, is_numerical=True):
@@ -177,7 +178,7 @@ class Loop(SketchBase):
         self.children = self.children[start_curve_idx:] + self.children[:start_curve_idx]
 
         # ensure mostly counter-clock wise
-        if isinstance(self.children[0], Circle) or isinstance(self.children[-1], Circle): # FIXME: hard-coded
+        if isinstance(self.children[0], Circle) or isinstance(self.children[-1], Circle): 
             return
         start_vec = self.children[0].direction()
         end_vec = self.children[-1].direction(from_start=False)
@@ -216,8 +217,9 @@ class Profile(SketchBase):
     """Sketch profile，a closed region formed by one or more loops. 
     The outer-most loop is placed at first."""
     @staticmethod
-    def from_dict(stat):
-        all_loops = [Loop.from_dict(item) for item in stat['loops']]
+    def from_dict(sket_entity):
+        # Sketches consists of list of loops
+        all_loops = [Loop.from_dict(item) for item in sket_entity['profiles']]
         return Profile(all_loops)
 
     def __str__(self):
