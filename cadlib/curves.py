@@ -98,7 +98,7 @@ class Line(CurveBase):
 
     @staticmethod
     def from_dict(stat):
-        assert stat['type'] == "LineSegment"
+        assert stat['stype'] == "LineSegment"
         start_point = np.array([stat['line']['start']['x'],
                                 stat['line']['start']['y']])
         end_point = np.array([stat['line']['end']['x'],
@@ -175,7 +175,7 @@ class Arc(CurveBase):
 
     @staticmethod
     def from_dict(stat):
-        assert stat['type'] == "Arc3D"
+        assert stat['stype'] == "Arc3D"
         start_point = np.array([stat['arc']['start']['x'],
                                 stat['arc']['start']['y']])
         end_point = np.array([stat['arc']['end']['x'],
@@ -354,7 +354,7 @@ class Circle(CurveBase):
 
     @staticmethod
     def from_dict(stat):
-        assert stat['type'] == "CircleSegment"
+        assert stat['stype'] == "CircleSegment"
         center = np.array([stat['circle']['center']['x'],
                            stat['circle']['center']['y']])
         radius = stat['circle']['radius']

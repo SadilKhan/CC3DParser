@@ -34,8 +34,9 @@ def cartesian2polar(vec, with_radius=False):
     """convert a vector in cartesian coordinates to polar(spherical) coordinates"""
     vec = vec.round(6)
     norm = np.linalg.norm(vec)
-    theta = np.arccos(vec[2] / norm) # (0, pi)
-    phi = np.arctan(vec[1] / (vec[0] + 1e-15)) # (-pi, pi) # FIXME: -0.0 cannot be identified here
+    theta = np.arccos(vec[2] / norm)  # (0, pi)
+    # (-pi, pi) # FIXME: -0.0 cannot be identified here
+    phi = np.arctan(vec[1] / (vec[0] + 1e-15))
     if not with_radius:
         return np.array([theta, phi])
     else:
@@ -102,3 +103,49 @@ def polar_parameterization_inverse(theta, phi, gamma):
     ref_y = np.cross(normal_3d, ref_x)
     x_axis_3d = ref_x * np.cos(gamma) + ref_y * np.sin(gamma)
     return normal_3d, x_axis_3d
+
+
+def dot_product(X, Y):
+    return np.dot(X, Y)/(np.linalg.norm(X)*np.linalg.norm(Y))
+
+
+def cross_product(X, Y):
+    return np.cross(X, Y)
+
+
+def rotation_matrix(normal_source, normal_target):
+    """
+    Returns a rotation matrix to rotate a plane
+    """
+
+    costheta = dot_product(normal_source, normal_target)
+    axis = cross_product(normal_source, normal_target)
+    sintheta = np.sqrt(1-costheta**2)
+    C = 1-costheta
+    x = axis[0]
+    y = axis[1]
+    z = axis[2]
+
+    return np.array([[x*x*C+costheta, x*y*C-z*sintheta, x*z*C+y*sintheta],
+                     [y*x*C+z*sintheta, y*y*C+costheta, y*z*C-x*sintheta]
+                     [z*x*C-y*sintheta, z*y*C+x*sintheta, z*z*C+costheta]])
+
+
+def euclidean_distance(X, Y):
+    """
+    X: numpy array
+    Y: numpy array
+    """
+    return np.sqrt(np.sum((X-Y)**2))
+
+def check_distance(X,Y,eps=1e-6):
+    assert euclidean_distance(X,Y)<eps, "Expected same arrays but got two different arrays"
+
+def unit_vector(X):
+    """
+    Vector normalization
+    """
+    if np.linalg.norm(X)==1:
+        return X
+    else:
+        return X/np.linalg.norm()

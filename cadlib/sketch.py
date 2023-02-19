@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from .curves import *
 from .macro import *
@@ -117,12 +117,24 @@ class SketchBase(object):
 ####################### loop & profile #######################
 class Loop(SketchBase):
     """Sketch loop, a sequence of connected curves."""
+
+    @staticmethod
+    def get_loop_entity(curveStat,curve_id):
+        """ Retuns information about a curve(Line/Arc/Circle)"""
+        for curve in curveStat:
+            if curve["uuid"] == curve_id:
+                return curve
+        return None
     @staticmethod
     def from_dict(curveStat,profileStat):
-        all_curves = [construct_curve_from_dict(item) for item in profileStat['curves']]
-        this_loop.is_outer = curveStat['isOuter']
-        this_loop.is_closed = curveStat['isClosed']
+        """
+        curveStat: dict. Contains information about different curve
+        profileStat: dict. Contains the information about all the curves used to create a loop
+        """
+        all_curves = [construct_curve_from_dict(Loop.get_loop_entity(curveStat,item)) for item in profileStat['curves']]
         this_loop = Loop(all_curves)
+        this_loop.is_outer = profileStat['isOuter']
+        this_loop.is_closed = profileStat['isClosed']
         return this_loop
 
     def __str__(self):
@@ -219,7 +231,9 @@ class Profile(SketchBase):
     @staticmethod
     def from_dict(sket_entity):
         # Sketches consists of list of loops
-        all_loops = [Loop.from_dict(item) for item in sket_entity['profiles']]
+        if len(sket_entity['profiles'])==0:
+            return None
+        all_loops = [Loop.from_dict(sket_entity['curves'],item) for item in sket_entity['profiles']]
         return Profile(all_loops)
 
     def __str__(self):

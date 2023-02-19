@@ -113,8 +113,7 @@ class Extrude(object):
         Returns:
             list: one or more Extrude instances
         """
-        # TODO: WORK HERE ---------------->
-
+        
         extrude_entity = all_stat["entities"][extrude_id]
         #assert extrude_entity["start_extent"]["type"] == "ProfilePlaneStartDefinition"
 
@@ -122,9 +121,10 @@ class Extrude(object):
         n = len(extrude_entity["feature"]['extrude']["references"]) # Number of sketches(in most cases it's 1)
         for i in range(n):
             sketch_id= extrude_entity["feature"]["extrude"]["references"][i]
-            sket_entity = all_stat["entities"][Extrude.get_sketch_id(all_stat,sketch_id)]['sketch']
+            sket_entity = all_stat["entities"][Extrude.get_sketch_index(all_stat,sketch_id)]['sketch']
             sket_profile = Profile.from_dict(sket_entity)
-            sket_plane = CoordSystem.from_dict(sket_entity["transform"])
+            # TODO: WORK FROM HERE ---------------->
+            sket_plane = CoordSystem.from_dict(sket_entity["refPlane"],sket_entity["transform"])
             # normalize profile
             point = sket_profile.start_point
             sket_pos = point[0] * sket_plane.x_axis + point[1] * sket_plane.y_axis + sket_plane.origin
@@ -147,7 +147,7 @@ class Extrude(object):
         return [Extrude(all_skets[i][0], all_skets[i][1], all_operations[i], extent_type, extent_one, extent_two,
                         all_skets[i][2], all_skets[i][3]) for i in range(n)]
     @staticmethod
-    def get_sketch_id(all_stat,sketch_id):
+    def get_sketch_index(all_stat,sketch_id):
         for tm in all_stat["timeline"]:
             if tm['uuid']==sketch_id:
                 return tm['index']
