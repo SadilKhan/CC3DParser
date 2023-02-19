@@ -113,7 +113,7 @@ def cross_product(X, Y):
     return np.cross(X, Y)
 
 
-def rotation_matrix(normal_source, normal_target):
+def rotation_matrix_plane(normal_source, normal_target):
     """
     Returns a rotation matrix to rotate a plane
     """
@@ -127,8 +127,20 @@ def rotation_matrix(normal_source, normal_target):
     z = axis[2]
 
     return np.array([[x*x*C+costheta, x*y*C-z*sintheta, x*z*C+y*sintheta],
-                     [y*x*C+z*sintheta, y*y*C+costheta, y*z*C-x*sintheta]
+                     [y*x*C+z*sintheta, y*y*C+costheta, y*z*C-x*sintheta],
                      [z*x*C-y*sintheta, z*y*C+x*sintheta, z*z*C+costheta]])
+
+def transformation_matrix_axis(x_axis_3d,y_axis_3d,z_axis_3d,translation,iftranslation=False):
+    rotation_mat=np.vstack([x_axis_3d, y_axis_3d,z_axis_3d])
+    if iftranslation:
+        translation_mat=translation.reshape(-1,1)
+    else:
+        translation_mat=np.zeros_like(translation.reshape(-1,1))
+    transformation_mat=np.concatenate([rotation_mat,translation_mat],axis=1)
+    ones=np.array([0,0,0,1]).reshape(1,4)
+    translation_mat_homogeneous=np.concatenate([transformation_mat,ones])
+
+    return translation_mat_homogeneous
 
 
 def euclidean_distance(X, Y):
@@ -148,4 +160,4 @@ def unit_vector(X):
     if np.linalg.norm(X)==1:
         return X
     else:
-        return X/np.linalg.norm()
+        return X/np.linalg.norm(X)
