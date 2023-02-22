@@ -27,6 +27,8 @@ def create_CAD(cad_seq: CADSequence):
     """create a 3D CAD model from CADSequence. Only support extrude with boolean operation."""
     body = create_by_extrude(cad_seq.seq[0])
     for extrude_op in cad_seq.seq[1:]:
+        extrude_op.extent_one*=-2
+        #extrude_op.extent_one*=2
         new_body = create_by_extrude(extrude_op)
         if extrude_op.operation == EXTRUDE_OPERATIONS.index("NewBodyFeatureOperation") or \
                 extrude_op.operation == EXTRUDE_OPERATIONS.index("JoinFeatureOperation"):

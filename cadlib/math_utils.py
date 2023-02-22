@@ -186,3 +186,8 @@ def unit_vector(X):
         return X
     else:
         return X/np.linalg.norm(X)
+    
+
+
+def l1_distance(X,Y):
+    return np.abs(np.sum(X-Y))

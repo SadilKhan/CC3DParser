@@ -39,10 +39,12 @@ def process_one(json_path,save_dir):
 
     subdir="/".join(json_path.split("/")[-3:-1])
     data['path']=os.path.join(subdir,json_id)
-    
+    # cad_seq = CADSequence.from_dict(data)
+
     try:
         cad_seq = CADSequence.from_dict(data)
     except Exception as e:
+        #print(e)
         FAILED_SEQ+=1
         #print(f"Failed: No Sequence Created for {json_path}")
         return

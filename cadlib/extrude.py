@@ -90,7 +90,7 @@ class Extrude(object):
 
     def __init__(self, profile: Profile, sketch_plane: CoordSystem,
                  operation, 
-                 extent_type, extent_one, extent_two, extent_start=None, extent_end_one=None, extent_end_two=None, 
+                 extent_type, extent_one, extent_two, 
                  sketch_pos=None, sketch_size=None):
         """
         Args:
@@ -112,9 +112,9 @@ class Extrude(object):
         self.extent_type = extent_type
         self.extent_one = extent_one
         self.extent_two = extent_two
-        self.extent_start = extent_start
-        self.extent_end_one = extent_end_one
-        self.extent_end_two = extent_end_two
+        # self.extent_start = extent_start
+        # self.extent_end_one = extent_end_one
+        # self.extent_end_two = extent_end_two
         self.sketch_pos = sketch_pos
         self.sketch_size = sketch_size
 
@@ -153,8 +153,8 @@ class Extrude(object):
                 sket_plane = CoordSystem.from_dict(
                     sket_entity["refPlane"], sket_entity["transform"]["data"])
             except Exception as e:
-                print(f"Problem:{e}\n")
-                print("Path:",all_stat['path'])
+                #print(f"Problem:{e}\n")
+                #print("Path:",all_stat['path'])
                 continue
             # normalize profile
             point = sket_profile.start_point
@@ -197,8 +197,7 @@ class Extrude(object):
         if len(all_skets)>0:
             return [Extrude(all_skets[i][0], all_skets[i][1], all_operations[i], 
                             extent_type, extent_one, 
-                            extent_two, extent_start,
-                            extent_end_one, extent_end_two,
+                            extent_two,
                             all_skets[i][2], all_skets[i][3]) for i in range(n)]
         else:
             return None
@@ -210,7 +209,7 @@ class Extrude(object):
                        ["y"], refAxis['end']["z"]])
         if end[0]=="NaN":
             end=np.array([1,1,1])
-        return euclidean_distance(start, end)
+        return l1_distance(start, end)
 
     @staticmethod
     def get_sketch_index(all_stat, sketch_id):
@@ -234,7 +233,7 @@ class Extrude(object):
             np.concatenate([sket_pos, ext_vec[:N_ARGS_PLANE]]))
         ext_param = ext_vec[-N_ARGS_EXT_PARAM:]
 
-        res = Extrude(profile, sket_plane, int(ext_param[2]), int(ext_param[3]), ext_param[0], ext_param[1],None,None,None,
+        res = Extrude(profile, sket_plane, int(ext_param[2]), int(ext_param[3]), ext_param[0], ext_param[1],
                       sket_pos, sket_size)
         if is_numerical:
             res.denumericalize(n)
@@ -347,12 +346,16 @@ class CADSequence(object):
         """construct CADSequence from json data"""
         seq = []
         # CAD Sequence consists of a list of Extrude Objects.
-        for item in all_stat["entities"]:
-            item_type,item_id = CADSequence.get_extrusion_type(item)
+        for item in all_stat["timeline"]:
+            item_index,item_id = item['index'],item['uuid']
+            item_type,item_id_entity=CADSequence.get_extrusion_type(all_stat["entities"][item_index])
+            if item_id!=item_id_entity:
+                raise KeyError("Key Mismatch")
             if item_type== "ExtrudeFeature":
-                item_index = CADSequence.get_extrusion_index(all_stat,item_id)
-                if not item_index:
-                    raise KeyError("Key Mismatch",item_type,item_id,item_index)
+                # print(item_index)
+                #item_index = CADSequence.get_extrusion_index(all_stat,item_id)
+                # if not item_index:
+                #     raise KeyError("Key Mismatch",item_type,item_id,item_index)
                 extrude_ops = Extrude.from_dict(all_stat, item_index)
                 if extrude_ops is not None:
                     seq.extend(extrude_ops)
@@ -384,7 +387,7 @@ class CADSequence(object):
     @staticmethod
     def get_extrusion_type(item):
         """
-        Returns the extrusion id
+        Returns the extrusion type
         """
         key_ = list(item.keys())[0]
         try:
