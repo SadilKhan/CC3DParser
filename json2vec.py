@@ -1,4 +1,4 @@
-import os
+import os,shutil
 import open3d as o3d
 import argparse
 import json
@@ -10,7 +10,7 @@ import sys
 sys.path.append("..")
 from cadlib.extrude import CADSequence
 from cadlib.macro import *
-from utils.file_utils import get_files
+from utils.file_utils import *
 
 FAILED_SEQ=0
 
@@ -45,7 +45,7 @@ def process_one(json_path,save_dir):
         cad_seq = CADSequence.from_dict(data)
     except Exception as e:
         FAILED_SEQ+=1
-        print(f"Failed: No Sequence Created for {json_path}")
+        #print(f"Failed: No Sequence Created for {json_path}")
         return
 
     # Save Sketch point cloud before extrusion   
@@ -56,7 +56,7 @@ def process_one(json_path,save_dir):
     # TASK: Normalize 
     cad_seq.normalize()
     cad_seq.numericalize()
-    cad_vec = cad_seq.to_vector(MAX_N_EXT, MAX_N_LOOPS, MAX_N_CURVES, None, pad=False)
+    cad_vec = cad_seq.to_vector(MAX_N_EXT, None, None, None, pad=False)
     
     # except Exception as e:
     #     print(e,json_id)
@@ -66,15 +66,15 @@ def process_one(json_path,save_dir):
     #pc_path= os.path.join(save_dir+"_ply",subdir, json_id + ".ply")
     truck_dir = os.path.dirname(json_save_path)
     #pc_dir=os.path.dirname(pc_path)
+    ensure_dir(truck_dir)
 
-    if not os.path.exists(truck_dir):
-        os.makedirs(truck_dir)
-
-    # if not os.path.exists(pc_dir):
-    #     os.makedirs(pc_dir)
+    # ensure_dir(pc_dir)
 
     #o3d.io.write_point_cloud(pc_path,pcd)
     with h5py.File(json_save_path, 'w') as fp:
+        if cad_vec is None:
+            print(cad_vec,json_path)
+            FAILED_SEQ+=1
         fp.create_dataset("vec", data=cad_vec, dtype=np.int32)
 
 

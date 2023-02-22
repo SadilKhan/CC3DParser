@@ -1,4 +1,4 @@
-import os
+import os,shutil
 
 
 def get_files(dir):
@@ -21,6 +21,9 @@ def ensure_dir(path):
     :return:
     """
     if not os.path.exists(path):
+        os.makedirs(path)
+    else:
+        shutil.rmtree(path,ignore_errors=True)
         os.makedirs(path)
 
 

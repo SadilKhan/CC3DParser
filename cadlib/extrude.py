@@ -373,8 +373,8 @@ class CADSequence(object):
                     seq.extend(extrude_ops)
         #bbox = CADSequence.bbox(seq)
         if len(seq)==0:
-            return None
-            #raise Exception("Failed: No CAD Sequence created.")
+            #return None
+            raise Exception("Failed: No CAD Sequence created. Probably there are unsupported curves.")
         return CADSequence(seq)
 
     @staticmethod
@@ -425,9 +425,9 @@ class CADSequence(object):
             res += "({})".format(i) + str(ext) + "\n"
         return res
 
-    def to_vector(self, max_n_ext=10, max_n_loops=6, max_len_loop=15, max_total_len=60, pad=False):
-        if len(self.seq) > max_n_ext:
-            return None
+    def to_vector(self, max_n_ext=10, max_n_loops=None, max_len_loop=None, max_total_len=60, pad=False):
+        # if len(self.seq) > max_n_ext:
+        #     return None
         vec_seq = []
         for item in self.seq:
             vec = item.to_vector(max_n_loops, max_len_loop, pad=False)
