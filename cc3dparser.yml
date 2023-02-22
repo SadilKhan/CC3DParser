@@ -4,7 +4,9 @@ channels:
     - defaults
 dependencies:
     - python=3.9
-    - numpy
-    - open3d
-    - tqdm
-    - h5py
+    - numpy=1.24.1
+    - open3d=0.16.0
+    - tqdm=4.64.1
+    - h5py=3.8.0
+    - trimesh=3.18.1
+    - pythonocc-core

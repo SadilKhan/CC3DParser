@@ -32,8 +32,10 @@ def angle_from_vector_to_x(vec):
 
 def cartesian2polar(vec, with_radius=False):
     """convert a vector in cartesian coordinates to polar(spherical) coordinates"""
-    vec = vec.round(6)
+    #vec = vec.round(6)
     norm = np.linalg.norm(vec)
+    if norm==0:
+        raise ZeroDivisionError("Norm is 0")
     theta = np.arccos(vec[2] / norm)  # (0, pi)
     # (-pi, pi) # FIXME: -0.0 cannot be identified here
     phi = np.arctan(vec[1] / (vec[0] + 1e-15))
@@ -151,7 +153,7 @@ def euclidean_distance(X, Y):
     return np.sqrt(np.sum((X-Y)**2))
 
 def check_distance(X,Y,eps=1e-6):
-    assert euclidean_distance(X,Y)<eps, "Expected same arrays but got two different arrays"
+    assert euclidean_distance(X,Y)<eps, f"Expected same arrays but got two different arrays\n X:{X}\nY:{Y}"
 
 def unit_vector(X):
     """

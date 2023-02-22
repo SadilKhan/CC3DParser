@@ -43,11 +43,12 @@ class CoordSystem(object):
         y_axis_3d = unit_vector(np.array(transform[3:6]))
         z_axis_3d = unit_vector(np.array(transform[6:9]))
         # Check if normal and z_axis are same
-        check_distance(normal_3d, z_axis_3d)
+        #check_distance(normal_3d, z_axis_3d)
         transformation_matrix = transformation_matrix_axis(
-            x_axis_3d, y_axis_3d, z_axis_3d, origin, True)
-        theta, phi, gamma = polar_parameterization(z_axis_3d, x_axis_3d)
-        return CoordSystem(origin, theta, phi, gamma, y_axis=cartesian2polar(y_axis_3d), transformation_matrix_axis=transformation_matrix)
+            x_axis_3d, y_axis_3d, z_axis_3d, origin, False)
+        theta, phi, gamma = polar_parameterization(normal_3d, x_axis_3d)
+        y_axis=cartesian2polar(y_axis_3d)
+        return CoordSystem(origin, theta, phi, gamma, y_axis=y_axis, transformation_matrix_axis=transformation_matrix)
 
     @staticmethod
     def from_vector(vec, is_numerical=False, n=256):
@@ -90,7 +91,9 @@ class Extrude(object):
     NOTE: only support single sketch profile. Extrusion with multiple profiles is decomposed."""
 
     def __init__(self, profile: Profile, sketch_plane: CoordSystem,
-                 operation, extent_type, extent_one, extent_two, extent_start, extent_end_one, extent_end_two, sketch_pos, sketch_size):
+                 operation, 
+                 extent_type, extent_one, extent_two, extent_start=None, extent_end_one=None, extent_end_two=None, 
+                 sketch_pos=None, sketch_size=None):
         """
         Args:
             profile (Profile): normalized sketch profile
@@ -139,17 +142,25 @@ class Extrude(object):
         n = len(extrude_entity['extrude']["references"])
         for i in range(n):
             sketch_id = extrude_entity["extrude"]["references"][i]
-            sket_entity = all_stat["entities"][Extrude.get_sketch_index(
-                all_stat, sketch_id)]['sketch']
-            sket_profile = Profile.from_dict(sket_entity)
-            if sket_profile is  None:
+            try:
+                sket_entity = all_stat["entities"][Extrude.get_sketch_index(
+                    all_stat, sketch_id)]['sketch']
+            except:
+                #print(f"Key Mismatch for Extrusion and Sketch: Path {all_stat['path']}, Sketch ID {sketch_id}")
                 continue
-            sket_plane = CoordSystem.from_dict(
-                sket_entity["refPlane"], sket_entity["transform"]["data"])
+            sket_profile = Profile.from_dict(sket_entity)
+            if sket_profile is None:
+                continue
+            try:
+                sket_plane = CoordSystem.from_dict(
+                    sket_entity["refPlane"], sket_entity["transform"]["data"])
+            except Exception as e:
+                print(f"Problem:{e}\n")
+                print("Path:",all_stat['path'])
+                continue
             # normalize profile
             point = sket_profile.start_point
-            sket_pos = point[0] * sket_plane.x_axis + \
-                point[1] * sket_plane.y_axis + sket_plane.origin
+            sket_pos = point[0] * sket_plane.x_axis + point[1] * sket_plane.y_axis + sket_plane.origin
             sket_size = sket_profile.bbox_size
             #sket_profile.normalize(sketch_dim)
             all_skets.append((sket_profile, sket_plane, sket_pos, sket_size))
@@ -170,7 +181,7 @@ class Extrude(object):
         elif len(extrude_entity['extrude']['refAxis']) == 2:
             extent_type =EXTENT_TYPE.index("TwoSidesFeatureExtentType")
             extent_two = Extrude.get_extent_amount(
-                extrude_entity['refAxis'][1])
+                extrude_entity['extrude']['refAxis'][1])
             extent_end_two = np.array(
                 list(extrude_entity['extrude']['refAxis'][1]['end'].values()))
         else:
@@ -185,7 +196,9 @@ class Extrude(object):
             all_operations = [operation] * n
 
         if len(all_skets)>0:
-            return [Extrude(all_skets[i][0], all_skets[i][1], all_operations[i], extent_type, extent_one, extent_two, extent_start,
+            return [Extrude(all_skets[i][0], all_skets[i][1], all_operations[i], 
+                            extent_type, extent_one, 
+                            extent_two, extent_start,
                             extent_end_one, extent_end_two,
                             all_skets[i][2], all_skets[i][3]) for i in range(n)]
         else:
@@ -202,9 +215,10 @@ class Extrude(object):
 
     @staticmethod
     def get_sketch_index(all_stat, sketch_id):
-        for tm in all_stat["timeline"]:
-            if tm['uuid'] == sketch_id:
-                return tm['index']
+        for index,ent in enumerate(all_stat["entities"]):
+            key_=list(ent.keys())[0]
+            if ent[key_]['uuid'] == sketch_id:
+                return index
         return None
 
     @staticmethod
@@ -221,7 +235,7 @@ class Extrude(object):
             np.concatenate([sket_pos, ext_vec[:N_ARGS_PLANE]]))
         ext_param = ext_vec[-N_ARGS_EXT_PARAM:]
 
-        res = Extrude(profile, sket_plane, int(ext_param[2]), int(ext_param[3]), ext_param[0], ext_param[1],
+        res = Extrude(profile, sket_plane, int(ext_param[2]), int(ext_param[3]), ext_param[0], ext_param[1],None,None,None,
                       sket_pos, sket_size)
         if is_numerical:
             res.denumericalize(n)
@@ -238,7 +252,8 @@ class Extrude(object):
         return s
     
     def normalize(self):
-        self.profile.normalize()
+        self.profile.normalize(256)
+        pass
 
     def transform(self, translation, scale):
         """linear transformation"""
@@ -252,7 +267,7 @@ class Extrude(object):
     def numericalize(self, n=256):
         """quantize the representation.
         NOTE: shall only be called after CADSequence.normalize (the shape lies in unit cube, -1~1)"""
-        assert -2.0 <= self.extent_one <= 2.0 and -2.0 <= self.extent_two <= 2.0
+        #assert -2.0 <= self.extent_one <= 2.0 and -2.0 <= self.extent_two <= 2.0
         self.profile.numericalize(n)
         self.sketch_plane.numericalize(n)
         self.extent_one = ((self.extent_one + 1.0) / 2 *
@@ -261,7 +276,6 @@ class Extrude(object):
                            n).round().clip(min=0, max=n-1).astype(np.int32)
         self.operation = int(self.operation)
         self.extent_type = int(self.extent_type)
-
         self.sketch_pos = ((self.sketch_pos + 1.0) / 2 *
                            n).round().clip(min=0, max=n-1).astype(np.int32)
         self.sketch_size = (self.sketch_size / 2 *
@@ -333,7 +347,6 @@ class Extrude(object):
         bbox_4d_transformed = bbox_4d_transformed.reshape(-1, 4)  # (N,4)
         bbox_3d = bbox_4d_transformed[:, :3]  # (N,3)
         bbox_3d=np.vstack([bbox_3d.min(axis=0),bbox_3d.max(axis=0)])
-
         return bbox_3d
 
 
@@ -359,6 +372,9 @@ class CADSequence(object):
                 if extrude_ops is not None:
                     seq.extend(extrude_ops)
         #bbox = CADSequence.bbox(seq)
+        if len(seq)==0:
+            return None
+            #raise Exception("Failed: No CAD Sequence created.")
         return CADSequence(seq)
 
     @staticmethod
@@ -368,7 +384,8 @@ class CADSequence(object):
         for ex in seq:
             allstartBbox.append(ex.bbox[0])
             allendBbox.append(ex.bbox[1])
-        return np.vstack([np.min(allstartBbox,axis=0),np.max(allendBbox,axis=0)])
+        cad_bbox=np.vstack([np.max(allendBbox,axis=0),np.min(allstartBbox,axis=0)])
+        return cad_bbox
 
     @staticmethod
     def get_extrusion_index(all_stat, item_id):
@@ -437,9 +454,11 @@ class CADSequence(object):
 
     def normalize(self, size=1.0):
         """(1)normalize the shape into unit cube (-1~1). """
+        scale = size * NORM_FACTOR / np.max(np.abs(CADSequence.bbox(self.seq)))
+        # Normalize the sketch profile
         for ex in self.seq:
             ex.normalize()
-        scale = size * NORM_FACTOR / np.max(np.abs(CADSequence.bbox(self.seq)))
+        #print(f"Scale {scale}")
         self.transform(0.0, scale)
 
     def numericalize(self, n=256):
