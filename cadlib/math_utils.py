@@ -133,7 +133,7 @@ def rotation_matrix_plane(normal_source, normal_target):
                      [z*x*C-y*sintheta, z*y*C+x*sintheta, z*z*C+costheta]])
 
 def point_transformation(points,x_axis=np.array([1,0,0]),y_axis=np.array([0,1,0]), 
-                         z_axis=np.array([0,0,1]),origin=np.array([0,0,0])):
+                         z_axis=np.array([0,0,1]),origin=np.array([0,0,0]),iftranslation=False):
     """Linear Transformation of points"""
     if len(points.shape)==1:
         points=points.reshape(1,-1)
@@ -142,7 +142,10 @@ def point_transformation(points,x_axis=np.array([1,0,0]),y_axis=np.array([0,1,0]
         # Add z coordinates
         points=add_axis(points,value=0)
     
-    transformed_pts=points[:,0].reshape(-1,1)*x_axis+points[:,1].reshape(-1,1)*y_axis+points[:,2].reshape(-1,1)*z_axis+origin
+    transformed_pts=points[:,0].reshape(-1,1)*x_axis+points[:,1].reshape(-1,1)*y_axis+\
+        points[:,2].reshape(-1,1)*z_axis
+    if iftranslation:
+        transformed_pts+=origin
     return transformed_pts
 
 def add_axis(point,value):

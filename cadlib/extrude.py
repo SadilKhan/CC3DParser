@@ -34,13 +34,14 @@ class CoordSystem(object):
 
     @staticmethod
     def from_dict(refPlane, transform):
-        origin = np.array(
-            [refPlane["origin"]["x"], refPlane["origin"]["y"], refPlane["origin"]["z"]])
+        # origin = np.array(
+        #     [refPlane["origin"]["x"], refPlane["origin"]["y"], refPlane["origin"]["z"]])
         normal_3d = np.array(
             [refPlane["normal"]["x"], refPlane["normal"]["y"], refPlane["normal"]["z"]])
         x_axis_3d = unit_vector(np.array(transform[0:3]))
         y_axis_3d = unit_vector(np.array(transform[3:6]))
         z_axis_3d = unit_vector(np.array(transform[6:9]))
+        origin=np.array(transform[9:12])
         # Check if normal and z_axis are same
         #check_distance(normal_3d, z_axis_3d)
         theta, phi, gamma = polar_parameterization(normal_3d, x_axis_3d)
@@ -158,7 +159,7 @@ class Extrude(object):
             # normalize profile
             point = sket_profile.start_point
             # Linear Transformation of points
-            sket_pos = point[0] * sket_plane.x_axis + point[1] * sket_plane.y_axis + sket_plane.origin
+            sket_pos = point[0] * sket_plane.x_axis + point[1] * sket_plane.y_axis+ sket_plane.origin
             sket_size = sket_profile.bbox_size
             #sket_profile.normalize(sketch_dim)
             all_skets.append((sket_profile, sket_plane, sket_pos, sket_size))
@@ -322,7 +323,7 @@ class Extrude(object):
         sampled_points_transformed=point_transformation(sampled_points,
                                                         x_axis=self.sketch_plane.x_axis,\
                                                         y_axis=self.sketch_plane.y_axis,\
-                                                        origin=self.sketch_plane.origin) #(N,3)
+                                                        origin=self.sketch_plane.origin,iftranslation=True) #(N,3)
         return sampled_points_transformed
 
     @property
@@ -330,7 +331,7 @@ class Extrude(object):
         bbox_2d = self.profile.bbox  # (N,2)
         bbox_3d=point_transformation(bbox_2d,x_axis=self.sketch_plane.x_axis,\
                                     y_axis=self.sketch_plane.y_axis,\
-                                    origin=self.sketch_plane.origin) #(N,3)
+                                    origin=self.sketch_plane.origin,iftranslation=True) #(N,3)
         return bbox_3d
 
 

@@ -22,14 +22,13 @@ def main():
     args=parser.parse_args()
 
     JSON_PATH=os.path.join(args.input_dir)
-    print(JSON_PATH)
     SAVE_DIR=args.output_dir
 
     allJsonFiles = get_files(JSON_PATH)
     for js in tqdm(allJsonFiles):
         process_one(js,SAVE_DIR)
 
-    print(f"Failed Sequence:{FAILED_SEQ/len(allJsonFiles)}")
+    print(f"Failed Sequence:{np.round(FAILED_SEQ*100/len(allJsonFiles),4)}%")
 
 
 def process_one(json_path,save_dir):
@@ -69,13 +68,15 @@ def process_one(json_path,save_dir):
     ensure_dir(truck_dir)
 
     ensure_dir(pc_dir)
-
-    o3d.io.write_point_cloud(pc_path,pcd)
     with h5py.File(json_save_path, 'w') as fp:
         if cad_vec is None:
             print(cad_vec,json_path)
             FAILED_SEQ+=1
+            return
         fp.create_dataset("vec", data=cad_vec, dtype=np.int32)
+
+    o3d.io.write_point_cloud(pc_path,pcd)
+
 
 
 if __name__ == '__main__':

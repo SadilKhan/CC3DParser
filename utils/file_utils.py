@@ -22,9 +22,6 @@ def ensure_dir(path):
     """
     if not os.path.exists(path):
         os.makedirs(path)
-    else:
-        shutil.rmtree(path,ignore_errors=True)
-        os.makedirs(path)
 
 
 def ensure_dirs(paths):
