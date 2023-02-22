@@ -8,13 +8,12 @@ from .math_utils import *
 class CoordSystem(object):
     """Local coordinate system for sketch plane."""
 
-    def __init__(self, origin, theta, phi, gamma, y_axis=None, transformation_matrix_axis=None, is_numerical=False):
+    def __init__(self, origin, theta, phi, gamma, y_axis=None,is_numerical=False):
         self.origin = origin
         self._theta = theta  # 0~pi
         self._phi = phi     # -pi~pi
         self._gamma = gamma  # -pi~pi
         self._y_axis = y_axis  # (theta, phi)
-        self.transformation_matrix_axis = transformation_matrix_axis
         self.is_numerical = is_numerical
 
     @property
@@ -44,11 +43,9 @@ class CoordSystem(object):
         z_axis_3d = unit_vector(np.array(transform[6:9]))
         # Check if normal and z_axis are same
         #check_distance(normal_3d, z_axis_3d)
-        transformation_matrix = transformation_matrix_axis(
-            x_axis_3d, y_axis_3d, z_axis_3d, origin, False)
         theta, phi, gamma = polar_parameterization(normal_3d, x_axis_3d)
         y_axis=cartesian2polar(y_axis_3d)
-        return CoordSystem(origin, theta, phi, gamma, y_axis=y_axis, transformation_matrix_axis=transformation_matrix)
+        return CoordSystem(origin, theta, phi, gamma, y_axis=y_axis)
 
     @staticmethod
     def from_vector(vec, is_numerical=False, n=256):
@@ -160,6 +157,7 @@ class Extrude(object):
                 continue
             # normalize profile
             point = sket_profile.start_point
+            # Linear Transformation of points
             sket_pos = point[0] * sket_plane.x_axis + point[1] * sket_plane.y_axis + sket_plane.origin
             sket_size = sket_profile.bbox_size
             #sket_profile.normalize(sketch_dim)
@@ -320,33 +318,19 @@ class Extrude(object):
         Sample points from the profile/sketch and transform it to the CAD plane.
         """
         sampled_points = self.profile.sample_points() #(N_Loops,N_curves,2)
-        sampled_points = sampled_points.reshape(-1, 2)#(N_Loops * N_curves,2) -> (N,2)
-        zeros = np.zeros((len(sampled_points), 1)) # (N,1)
-        ones = np.ones((len(sampled_points), 1)) #(N,1)
-        sampled_points = np.concatenate([sampled_points, zeros, ones], axis=1) # Adding z axis and homogeneity #(N,4)
-        sampled_points = sampled_points.reshape(-1, 4, 1) # (N,4,1)
-        N = sampled_points.shape[0]
-        transformation_matrix_axis = np.broadcast_to(
-            self.sketch_plane.transformation_matrix_axis, (N, 4, 4)) #(N,4,4)
-        sampled_points_transformed=np.matmul(transformation_matrix_axis, sampled_points).reshape(-1,4)[:, :3]#(N,3)
+        sampled_points=sampled_points.reshape(-1,2) #(N,2)=(N_Loops*N_curves)
+        sampled_points_transformed=point_transformation(sampled_points,
+                                                        x_axis=self.sketch_plane.x_axis,\
+                                                        y_axis=self.sketch_plane.y_axis,\
+                                                        origin=self.sketch_plane.origin) #(N,3)
         return sampled_points_transformed
 
     @property
     def bbox(self):
         bbox_2d = self.profile.bbox  # (N,2)
-        zeros = np.zeros((bbox_2d.shape[0], 1))  # (N,2)
-        bbox_3d = np.concatenate([bbox_2d, zeros], axis=1)  # (N,3)
-        bbox_4d = np.concatenate(
-            [bbox_3d, zeros+1], axis=1).reshape(-1, 4, 1)  # (N,4,1)
-
-        transformation_matrix_axis = self.sketch_plane.transformation_matrix_axis  # (4,4)
-        transformation_matrix_axis = np.broadcast_to(
-            transformation_matrix_axis, (bbox_4d.shape[0], 4, 4))  # (N,4,4)
-
-        bbox_4d_transformed = transformation_matrix_axis@bbox_4d  # (N,4,1)
-        bbox_4d_transformed = bbox_4d_transformed.reshape(-1, 4)  # (N,4)
-        bbox_3d = bbox_4d_transformed[:, :3]  # (N,3)
-        bbox_3d=np.vstack([bbox_3d.min(axis=0),bbox_3d.max(axis=0)])
+        bbox_3d=point_transformation(bbox_2d,x_axis=self.sketch_plane.x_axis,\
+                                    y_axis=self.sketch_plane.y_axis,\
+                                    origin=self.sketch_plane.origin) #(N,3)
         return bbox_3d
 
 

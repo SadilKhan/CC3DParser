@@ -48,10 +48,10 @@ def process_one(json_path,save_dir):
         #print(f"Failed: No Sequence Created for {json_path}")
         return
 
-    # Save Sketch point cloud before extrusion   
-    # sample_points =cad_seq.sample_points()
-    # pcd=o3d.geometry.PointCloud()
-    # pcd.points=o3d.utility.Vector3dVector(sample_points)
+    # Save Sketch point cloud before extrusion (in Global coordinates)
+    sample_points =cad_seq.sample_points()
+    pcd=o3d.geometry.PointCloud()
+    pcd.points=o3d.utility.Vector3dVector(sample_points)
 
     # TASK: Normalize 
     cad_seq.normalize()
@@ -63,14 +63,14 @@ def process_one(json_path,save_dir):
     #     return
     
     json_save_path = os.path.join(save_dir,subdir, json_id + ".h5")
-    #pc_path= os.path.join(save_dir+"_ply",subdir, json_id + ".ply")
+    pc_path= os.path.join(save_dir+"_ply",subdir, json_id + ".ply")
     truck_dir = os.path.dirname(json_save_path)
-    #pc_dir=os.path.dirname(pc_path)
+    pc_dir=os.path.dirname(pc_path)
     ensure_dir(truck_dir)
 
-    # ensure_dir(pc_dir)
+    ensure_dir(pc_dir)
 
-    #o3d.io.write_point_cloud(pc_path,pcd)
+    o3d.io.write_point_cloud(pc_path,pcd)
     with h5py.File(json_save_path, 'w') as fp:
         if cad_vec is None:
             print(cad_vec,json_path)

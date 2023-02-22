@@ -132,7 +132,27 @@ def rotation_matrix_plane(normal_source, normal_target):
                      [y*x*C+z*sintheta, y*y*C+costheta, y*z*C-x*sintheta],
                      [z*x*C-y*sintheta, z*y*C+x*sintheta, z*z*C+costheta]])
 
-def transformation_matrix_axis(x_axis_3d,y_axis_3d,z_axis_3d,translation,iftranslation=False):
+def point_transformation(points,x_axis=np.array([1,0,0]),y_axis=np.array([0,1,0]), 
+                         z_axis=np.array([0,0,1]),origin=np.array([0,0,0])):
+    """Linear Transformation of points"""
+    if len(points.shape)==1:
+        points=points.reshape(1,-1)
+    
+    if points.shape[-1]==2:
+        # Add z coordinates
+        points=add_axis(points,value=0)
+    
+    transformed_pts=points[:,0].reshape(-1,1)*x_axis+points[:,1].reshape(-1,1)*y_axis+points[:,2].reshape(-1,1)*z_axis+origin
+    return transformed_pts
+
+def add_axis(point,value):
+    N=point.shape[0]
+    axisValue=np.ones((N,1))*value
+    return np.concatenate([point,axisValue],axis=1)
+
+
+def get_transformation_matrix(x_axis_3d,y_axis_3d,z_axis_3d,translation,iftranslation=False):
+    """ Transformation matrix for transforming points to another coordinate system"""
     rotation_mat=np.vstack([x_axis_3d, y_axis_3d,z_axis_3d])
     if iftranslation:
         translation_mat=translation.reshape(-1,1)

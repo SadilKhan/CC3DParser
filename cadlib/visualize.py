@@ -14,6 +14,7 @@ import os
 import trimesh
 from trimesh.sample import sample_surface
 import random
+from cadlib.math_utils import *
 
 
 def vec2CADsolid(vec, is_numerical=True, n=256):
