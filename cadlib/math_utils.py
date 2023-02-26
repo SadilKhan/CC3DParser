@@ -38,7 +38,15 @@ def cartesian2polar(vec, with_radius=False):
         raise ZeroDivisionError("Norm is 0")
     theta = np.arccos(vec[2] / norm)  # (0, pi)
     # (-pi, pi) # FIXME: -0.0 cannot be identified here
-    phi = np.arctan(vec[1] / (vec[0] + 1e-15))
+    phi = np.arctan(np.abs(vec[1] / (vec[0] + 1e-15)))
+
+    if vec[1]<0 and vec[0]<0:
+        phi=phi-np.pi
+    elif vec[0]<0:
+        phi=np.pi-phi
+    elif vec[1]<0:
+        phi*=-1
+        
     if not with_radius:
         return np.array([theta, phi])
     else:
