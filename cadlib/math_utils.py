@@ -45,7 +45,6 @@ def cartesian2polar(vec, with_radius=False):
         phi=np.pi-phi
     elif vec[1]<0:
         phi*=-1
-
     if not with_radius:
         return np.array([theta, phi])
     else:
