@@ -43,7 +43,7 @@ class CoordSystem(object):
         z_axis_3d = unit_vector(np.array(transform[6:9]))
         origin=np.array(transform[9:12])
         # Check if normal and z_axis are same
-        #check_distance(normal_3d, z_axis_3d)
+        check_distance(normal_3d, z_axis_3d)
         theta, phi, gamma = polar_parameterization(normal_3d, x_axis_3d)
         y_axis=cartesian2polar(y_axis_3d)
         return CoordSystem(origin, theta, phi, gamma, y_axis=y_axis)
@@ -90,7 +90,7 @@ class Extrude(object):
 
     def __init__(self, profile: Profile, sketch_plane: CoordSystem,
                  operation, 
-                 extent_type, extent_one, extent_two, 
+                 extent_type, extent_one, extent_two, extent_start=None,extent_end_one=None,extent_end_two=None,
                  sketch_pos=None, sketch_size=None):
         """
         Args:
@@ -112,9 +112,9 @@ class Extrude(object):
         self.extent_type = extent_type
         self.extent_one = extent_one
         self.extent_two = extent_two
-        # self.extent_start = extent_start
-        # self.extent_end_one = extent_end_one
-        # self.extent_end_two = extent_end_two
+        self.extent_start = extent_start
+        self.extent_end_one = extent_end_one
+        self.extent_end_two = extent_end_two
         self.sketch_pos = sketch_pos
         self.sketch_size = sketch_size
 
@@ -159,7 +159,9 @@ class Extrude(object):
             # normalize profile
             point = sket_profile.start_point
             # Linear Transformation of points
-            sket_pos = point[0] * sket_plane.x_axis + point[1] * sket_plane.y_axis+ sket_plane.origin
+            sket_pos=point_transformation(point,sket_plane.x_axis,
+                                          sket_plane.y_axis,origin=sket_plane.origin,iftranslation=True)[0]
+            #sket_pos = point[0] * sket_plane.x_axis + point[1] * sket_plane.y_axis+ sket_plane.origin
             sket_size = sket_profile.bbox_size
             #sket_profile.normalize(sketch_dim)
             all_skets.append((sket_profile, sket_plane, sket_pos, sket_size))
@@ -173,6 +175,7 @@ class Extrude(object):
             list(extrude_entity['extrude']['refAxis'][0]['start'].values()))
         extent_end_one = np.array(
             list(extrude_entity['extrude']['refAxis'][0]['end'].values()))
+        
         if len(extrude_entity['extrude']['refAxis']) == 1:
             extent_type = EXTENT_TYPE.index("OneSideFeatureExtentType")
             extent_end_two = None
@@ -197,7 +200,7 @@ class Extrude(object):
         if len(all_skets)>0:
             return [Extrude(all_skets[i][0], all_skets[i][1], all_operations[i], 
                             extent_type, extent_one, 
-                            extent_two,
+                            extent_two,extent_start,extent_end_one,extent_end_two,
                             all_skets[i][2], all_skets[i][3]) for i in range(n)]
         else:
             return None
@@ -207,9 +210,11 @@ class Extrude(object):
             [refAxis['start']["x"], refAxis['start']["y"], refAxis['start']["z"]])
         end = np.array([refAxis['end']["x"], refAxis['end']
                        ["y"], refAxis['end']["z"]])
+        direction=np.array([refAxis['direction']["x"], refAxis['direction']["y"], refAxis['direction']["z"]])
         if end[0]=="NaN":
-            end=np.array([1,1,1])
-        return l1_distance(start, end)
+            end=np.array([1,1,1])*direction
+            start=start*direction
+        return l1_distance(end, start)
 
     @staticmethod
     def get_sketch_index(all_stat, sketch_id):
@@ -233,7 +238,7 @@ class Extrude(object):
             np.concatenate([sket_pos, ext_vec[:N_ARGS_PLANE]]))
         ext_param = ext_vec[-N_ARGS_EXT_PARAM:]
 
-        res = Extrude(profile, sket_plane, int(ext_param[2]), int(ext_param[3]), ext_param[0], ext_param[1],
+        res = Extrude(profile, sket_plane, int(ext_param[2]), int(ext_param[3]), ext_param[0], ext_param[1],None,None,None,
                       sket_pos, sket_size)
         if is_numerical:
             res.denumericalize(n)
@@ -322,15 +327,23 @@ class Extrude(object):
         sampled_points_transformed=point_transformation(sampled_points,
                                                         x_axis=self.sketch_plane.x_axis,\
                                                         y_axis=self.sketch_plane.y_axis,\
-                                                        origin=self.sketch_plane.origin,iftranslation=True) #(N,3)
+                                                        origin=self.sketch_plane.origin,
+                                                        iftranslation=True) #(N,3)
         return sampled_points_transformed
 
     @property
     def bbox(self):
-        bbox_2d = self.profile.bbox  # (N,2)
+        bbox_2d = self.profile.bbox  # (2,2)
         bbox_3d=point_transformation(bbox_2d,x_axis=self.sketch_plane.x_axis,\
                                     y_axis=self.sketch_plane.y_axis,\
-                                    origin=self.sketch_plane.origin,iftranslation=True) #(N,3)
+                                    origin=self.sketch_plane.origin,iftranslation=True) #(2,3)
+        bbox_3d=np.vstack([bbox_3d.min(axis=0),bbox_3d.max(axis=0)])
+        if self.extent_type==0:
+            bbox_3d[0]=np.vstack([bbox_3d[0],self.extent_start,self.extent_end_one]).min(axis=0)
+            bbox_3d[1]=np.vstack([bbox_3d[1],self.extent_start,self.extent_end_one]).max(axis=0)
+        elif self.extent_type==-1:
+            bbox_3d[0]=np.vstack([bbox_3d[0],self.extent_start,self.extent_end_one,self.extent_end_two]).min(axis=0)
+            bbox_3d[1]=np.vstack([bbox_3d[1],self.extent_start,self.extent_end_one,self.extent_end_two]).max(axis=0)
         return bbox_3d
 
 
@@ -442,7 +455,8 @@ class CADSequence(object):
 
     def normalize(self, size=1.0):
         """(1)normalize the shape into unit cube (-1~1). """
-        scale = size * NORM_FACTOR / np.max(np.abs(CADSequence.bbox(self.seq)))
+        bbox_3d=CADSequence.bbox(self.seq)
+        scale = size * NORM_FACTOR / np.sum(bbox_3d[0]-bbox_3d[1])
         # Normalize the sketch profile
         for ex in self.seq:
             ex.normalize()

@@ -50,13 +50,16 @@ class SketchBase(object):
     def bbox(self):
         """compute bounding box (min/max points) of the sketch"""
         all_points = np.concatenate([child.bbox for child in self.children], axis=0)
-        return np.stack([np.min(all_points, axis=0), np.max(all_points, axis=0)], axis=0)
+        bbox_2d=np.stack([np.min(all_points, axis=0), np.max(all_points, axis=0)], axis=0)
+        return bbox_2d
+    
 
     @property
     def bbox_size(self):
         """compute bounding box size (max of height and width)"""
         bbox_min, bbox_max = self.bbox[0], self.bbox[1]
         bbox_size = np.max(np.abs(np.concatenate([bbox_max - self.start_point, bbox_min - self.start_point])))
+        #bbox_size=np.max((bbox_max-bbox_min)/2)
         return bbox_size
 
     @property

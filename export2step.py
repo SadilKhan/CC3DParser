@@ -10,8 +10,9 @@ import argparse
 import sys
 sys.path.append("..")
 from cadlib.extrude import CADSequence
-from cadlib.visualize import vec2CADsolid, create_CAD
+from cadlib.visualize import vec2CADsolid, create_CAD,CADsolid2pc
 from utils.file_utils import ensure_dir,get_files
+from utils.pc_utils import *
 
 FAILED_STEP=0
 def main():
@@ -39,12 +40,14 @@ def create_model(file_path,args):
                 keyName=list(fp.keys())[0]
                 out_vec = fp[keyName][:].astype(np.float64)
                 out_shape = vec2CADsolid(out_vec)
+                out_pc = CADsolid2pc(out_shape, 8096)
         else:
             with open(file_path, 'r') as fp:
                 data = json.load(fp)
             cad_seq = CADSequence.from_dict(data)
             cad_seq.normalize()
             out_shape = create_CAD(cad_seq)
+            out_pc = CADsolid2pc(out_shape, 8096)
 
     except Exception as e:
         print(e)
@@ -57,15 +60,26 @@ def create_model(file_path,args):
             FAILED_STEP+=1
             #print("detect invalid.")
             return None
-    
+        
     name = file_path.split("/")[-1].split(".")[0]
     subdir="/".join(file_path.split("/")[-3:-1]) # Only for CC3D Dataset. For Other dataset, use subdir=""
+    # Save Point Cloud
+    #save_path = os.path.join(args.save_dir+"_ply",subdir, name + ".ply")
+    save_path = os.path.join(args.save_dir,subdir, name + ".ply")
+    truck_dir = os.path.dirname(save_path)
+    if not os.path.exists(truck_dir):
+        os.makedirs(truck_dir)
+
+    write_ply(out_pc, save_path)
+
+    # Save Cad Model
     save_path=os.path.join(args.save_dir,subdir,name+".step")
     if not os.path.exists(args.save_dir+f"/{subdir}"):
         os.makedirs(args.save_dir+f"/{subdir}")
     try:
         write_step_file(out_shape, save_path)
-    except:
+    except Exception as e:
+        print(e)
         FAILED_STEP+=1
         #print("Problem Saving the CAD Model")
         return

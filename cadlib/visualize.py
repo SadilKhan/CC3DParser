@@ -22,13 +22,12 @@ def vec2CADsolid(vec, is_numerical=True, n=256):
     cad = create_CAD(cad)
     return cad
 
-
 def create_CAD(cad_seq: CADSequence):
     """create a 3D CAD model from CADSequence. Only support extrude with boolean operation."""
     body = create_by_extrude(cad_seq.seq[0])
-    for extrude_op in cad_seq.seq[1:]:
-        extrude_op.extent_one*=-2
-        #extrude_op.extent_one*=2
+    for i,extrude_op in enumerate(cad_seq.seq[1:]):
+        if extrude_op.operation==EXTRUDE_OPERATIONS.index("CutFeatureOperation"):
+            extrude_op.extent_one*=-1
         new_body = create_by_extrude(extrude_op)
         if extrude_op.operation == EXTRUDE_OPERATIONS.index("NewBodyFeatureOperation") or \
                 extrude_op.operation == EXTRUDE_OPERATIONS.index("JoinFeatureOperation"):
@@ -47,7 +46,6 @@ def create_by_extrude(extrude_op: Extrude):
 
     sketch_plane = copy(extrude_op.sketch_plane)
     sketch_plane.origin = extrude_op.sketch_pos
-
     face = create_profile_face(profile, sketch_plane)
     normal = gp_Dir(*extrude_op.sketch_plane.normal)
     ext_vec = gp_Vec(normal).Multiplied(extrude_op.extent_one)
@@ -114,7 +112,9 @@ def create_edge_3d(curve: CurveBase, sketch_plane: CoordSystem):
 
 def point_local2global(point, sketch_plane: CoordSystem, to_gp_Pnt=True):
     """convert point in sketch plane local coordinates to global coordinates"""
-    g_point = point[0] * sketch_plane.x_axis + point[1] * sketch_plane.y_axis + sketch_plane.origin
+    g_point=point_transformation(point,sketch_plane.x_axis,
+                                 sketch_plane.y_axis,origin=sketch_plane.origin,iftranslation=True)[0]
+    #g_point = point[0] * sketch_plane.x_axis + point[1] * sketch_plane.y_axis + sketch_plane.origin
     if to_gp_Pnt:
         return gp_Pnt(*g_point)
     return g_point
