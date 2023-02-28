@@ -48,25 +48,21 @@ After that, change the `INPUT_DIR` in `modelVisualizer.sh` to the `OUTPUT_PATH` 
 The keys in the json are described as below.
 
 ```mermaid
-graph TD;
-    subgraph Curve1
-        S1(Start) --> E1(End);
-    end;
-    subgraph Curve2
-        S2(Start) --> E2(End);
-    end;
-    subgraph Curve3
-        S3(Start) --> E3(End);
-    end;
-    subgraph Loop
-        Curve1;
-        Curve2;
-        Curve3;
-    end;
-    Curve1 --> Loop;
-    Curve2 --> Loop;
-    Curve3 --> Loop;
-    Loop --> Sketch --> Extrusion;
+classDiagram
+    note "From Duck till Zebra"
+    Loop <-- Curve
+    note for Loop "Loop Consists of multiple of Curves"
+    class Curve{
+        Start: Start Coordinate
+        End: End Coordinate
+        Center: Center of the curve if it's circle and arc
+    }
+    class Loop{
+        -int sizeInFeet
+        -canEat()
+    }
+    class Sketch{
+        +bool is_wild
+        +run()
+    }
 ```
-
-
