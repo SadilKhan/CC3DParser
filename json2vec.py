@@ -53,6 +53,7 @@ def process_one(json_path,save_dir):
     sample_points =cad_seq.sample_points()
     pcd=o3d.geometry.PointCloud()
     pcd.points=o3d.utility.Vector3dVector(sample_points)
+    pcd.paint_uniform_color([0.5, 0.6, 0.1])
 
     # TASK: Normalize 
     cad_seq.normalize()

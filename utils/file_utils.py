@@ -12,8 +12,6 @@ def get_files(dir):
     else:
         raise FileNotFoundError("No Files found. Please check your directory.")
     
-
-
 def ensure_dir(path):
     """
     create path by first checking its existence,

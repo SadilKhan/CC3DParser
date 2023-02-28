@@ -41,7 +41,7 @@ class CoordSystem(object):
         x_axis_3d = unit_vector(np.array(transform[0:3]))
         y_axis_3d = unit_vector(np.array(transform[3:6]))
         z_axis_3d = unit_vector(np.array(transform[6:9]))
-        origin=np.array(transform[9:12])
+        origin=np.array(transform[9:12],dtype=float)
         # Check if normal and z_axis are same
         check_distance(normal_3d, z_axis_3d)
         theta, phi, gamma = polar_parameterization(normal_3d, x_axis_3d)
@@ -161,7 +161,7 @@ class Extrude(object):
             # Linear Transformation of points
             sket_pos=point_transformation(point,sket_plane.x_axis,
                                           sket_plane.y_axis,origin=sket_plane.origin,iftranslation=True)[0]
-            #sket_pos = point[0] * sket_plane.x_axis + point[1] * sket_plane.y_axis+ sket_plane.origin
+            #sket_pos=sket_plane.origin
             sket_size = sket_profile.bbox_size
             #sket_profile.normalize(sketch_dim)
             all_skets.append((sket_profile, sket_plane, sket_pos, sket_size))
@@ -172,10 +172,10 @@ class Extrude(object):
         extent_one = Extrude.get_extent_amount(
             extrude_entity['extrude']['refAxis'][0])
         extent_start = np.array(
-            list(extrude_entity['extrude']['refAxis'][0]['start'].values()))
+            list(extrude_entity['extrude']['refAxis'][0]['start'].values()),dtype=float)
         extent_end_one = np.array(
             list(extrude_entity['extrude']['refAxis'][0]['end'].values()))
-        
+                
         if len(extrude_entity['extrude']['refAxis']) == 1:
             extent_type = EXTENT_TYPE.index("OneSideFeatureExtentType")
             extent_end_two = None
@@ -211,10 +211,11 @@ class Extrude(object):
         end = np.array([refAxis['end']["x"], refAxis['end']
                        ["y"], refAxis['end']["z"]])
         direction=np.array([refAxis['direction']["x"], refAxis['direction']["y"], refAxis['direction']["z"]])
+
         if end[0]=="NaN":
             end=np.array([1,1,1])*direction
             start=start*direction
-        return l1_distance(end, start)
+        return l1_distance(end*direction, start*direction)
 
     @staticmethod
     def get_sketch_index(all_stat, sketch_id):
@@ -264,7 +265,8 @@ class Extrude(object):
         self.sketch_plane.transform(translation, scale)
         self.extent_one *= scale
         self.extent_two *= scale
-        self.sketch_pos = (self.sketch_pos + translation) * scale
+        self.extent_start=(self.extent_start+translation) * scale
+        self.sketch_pos = (self.sketch_pos+translation) * scale
         self.sketch_size *= scale
 
     def numericalize(self, n=256):

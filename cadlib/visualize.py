@@ -25,7 +25,8 @@ def vec2CADsolid(vec, is_numerical=True, n=256):
 def create_CAD(cad_seq: CADSequence):
     """create a 3D CAD model from CADSequence. Only support extrude with boolean operation."""
     body = create_by_extrude(cad_seq.seq[0])
-    for i,extrude_op in enumerate(cad_seq.seq[1:]):
+    rest_seq=np.array(cad_seq.seq)
+    for i,extrude_op in enumerate(rest_seq[1:]):
         if extrude_op.operation==EXTRUDE_OPERATIONS.index("CutFeatureOperation"):
             extrude_op.extent_one*=-1
         new_body = create_by_extrude(extrude_op)
@@ -42,12 +43,14 @@ def create_CAD(cad_seq: CADSequence):
 def create_by_extrude(extrude_op: Extrude):
     """create a solid body from Extrude instance."""
     profile = copy(extrude_op.profile) # use copy to prevent changing extrude_op internally
-    profile.denormalize(extrude_op.sketch_size)
+    #profile.denormalize(extrude_op.sketch_size)
 
     sketch_plane = copy(extrude_op.sketch_plane)
-    sketch_plane.origin = extrude_op.sketch_pos
+    #sketch_plane.origin = extrude_op.sketch_pos
     face = create_profile_face(profile, sketch_plane)
+    #print(extrude_op.sketch_plane.normal)
     normal = gp_Dir(*extrude_op.sketch_plane.normal)
+
     ext_vec = gp_Vec(normal).Multiplied(extrude_op.extent_one)
     body = BRepPrimAPI_MakePrism(face, ext_vec).Shape()
     if extrude_op.extent_type == EXTENT_TYPE.index("SymmetricFeatureExtentType"):

@@ -5,6 +5,7 @@ channels:
 dependencies:
     - python=3.9
     - numpy=1.24.1
+    - matplotlib
     - open3d=0.16.0
     - tqdm=4.64.1
     - h5py=3.8.0

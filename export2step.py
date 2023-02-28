@@ -15,8 +15,10 @@ from utils.file_utils import ensure_dir,get_files
 from utils.pc_utils import *
 
 FAILED_STEP=0
+FAILED_FILES=[]
 def main():
     global FAILED_STEP
+    global FAILED_FILES
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', type=str, required=True, help="source folder")
     parser.add_argument('--form', type=str, default="h5", choices=["h5", "json"], help="file format")
@@ -31,9 +33,12 @@ def main():
         create_model(file_path,args)
     
     print(f"FAILED SEQUENCE  {FAILED_STEP*100/len(out_paths)}")
+    with open("failed_files.txt", "w") as output:
+        output.write(str(FAILED_FILES))
 
 def create_model(file_path,args):
     global FAILED_STEP
+    global FAILED_FILES
     try:
         if args.form == "h5":
             with h5py.File(file_path, 'r') as fp:
@@ -45,13 +50,14 @@ def create_model(file_path,args):
             with open(file_path, 'r') as fp:
                 data = json.load(fp)
             cad_seq = CADSequence.from_dict(data)
-            cad_seq.normalize()
+            #cad_seq.normalizse()
             out_shape = create_CAD(cad_seq)
-            out_pc = CADsolid2pc(out_shape, 8096)
+            #out_pc = CADsolid2pc(out_shape, 8096)
 
     except Exception as e:
         print(e)
         FAILED_STEP+=1
+        FAILED_FILES.append((file_path,e))
         #print("load and create failed.")
         return None    
     if args.filter:
@@ -70,7 +76,7 @@ def create_model(file_path,args):
     if not os.path.exists(truck_dir):
         os.makedirs(truck_dir)
 
-    write_ply(out_pc, save_path)
+    #write_ply(out_pc, save_path)
 
     # Save Cad Model
     save_path=os.path.join(args.save_dir,subdir,name+".step")
@@ -80,6 +86,7 @@ def create_model(file_path,args):
         write_step_file(out_shape, save_path)
     except Exception as e:
         print(e)
+        FAILED_FILES.append((file_path,e))
         FAILED_STEP+=1
         #print("Problem Saving the CAD Model")
         return
