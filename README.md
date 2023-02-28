@@ -52,17 +52,12 @@ graph TD;
     subgraph Curve1
         S1(Start) --> E1(End)
     end
-
     subgraph Curve2
         S2(Start) --> E2(End)
     end
-
     subgraph Curve3
         S3(Start) --> E3(End)
     end
-
-
-
     subgraph Loop
         Curve1
         Curve2
