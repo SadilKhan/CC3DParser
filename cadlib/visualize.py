@@ -28,7 +28,7 @@ def create_CAD(cad_seq: CADSequence):
     rest_seq=np.array(cad_seq.seq)
     for i,extrude_op in enumerate(rest_seq[1:]):
         if extrude_op.operation==EXTRUDE_OPERATIONS.index("CutFeatureOperation"):
-            extrude_op.extent_one*=-1
+            extrude_op.extent_one*=1
         new_body = create_by_extrude(extrude_op)
         if extrude_op.operation == EXTRUDE_OPERATIONS.index("NewBodyFeatureOperation") or \
                 extrude_op.operation == EXTRUDE_OPERATIONS.index("JoinFeatureOperation"):

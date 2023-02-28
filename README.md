@@ -45,11 +45,27 @@ After that, change the `INPUT_DIR` in `modelVisualizer.sh` to the `OUTPUT_PATH` 
 ```
 
 ## About Json
-The keys in the json are described as below.
 
 ```mermaid
 graph TD
-    E1[ExtrudeFeature] -->|references| S1[Sketch]
-    S1 --> |profiles| L1{Loop:List};
+    E1[ExtrudeFeature] -->|key: references| S1[Sketch];
+    S1 --> |key: profiles| L1{Loop: List};
+    L1 --> C1[Line];
+    L1 --> C2[Circle];
+    L1 --> C3[Arc];
 ```
+### The keys in the json are described as below.
 
+- `timeline`: The construction history of the cad model. It contains the `index` and `uuid`(The Id of the operation).
+
+- `entity`: The information about the entity(Sketch,Extrusion).
+
+- `extrude`: Gives the references of the Sketch Entity.
+
+- `refAxis`: The extrusion axis. It contains the `start` coordinate and the `end` coordinate and the `direction` of the extrusion.
+
+- `profiles`: The list of loops which constructs a sketch. Each loop contains multiple curves(Line/Arc/Circle).
+
+- `curves`: Contains the information of a curve present in the profiles of the respective sketch.For a line, it contains `start` and `end` coordinates. For a circle, it contains `start`, `end` coordinates, `radius` and `normal` of the plane the curve is drawn at.
+
+- `refPlane`: The plane of the sketch.
