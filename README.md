@@ -50,12 +50,18 @@ The keys in the json are described as below.
 ```mermaid
 graph TD;
     subgraph Curve1
-        Start --> End
+        S1(Start) --> E1(End)
     end
 
     subgraph Curve2
-        Start --> End
+        S2(Start) --> E2(End)
     end
+
+    subgraph Curve3
+        S3(Start) --> E3(End)
+    end
+
+
 
     subgraph Loop
         Curve1
@@ -63,8 +69,8 @@ graph TD;
         Curve3
     end
     Curve1 --> Loop;
-    Curve --> Loop;
-    Curve --> Loop;
+    Curve2 --> Loop;
+    Curve3 --> Loop;
     Loop --> Sketch --> Extrusion;
 ```
 
