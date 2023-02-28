@@ -49,12 +49,7 @@ The keys in the json are described as below.
 
 ```mermaid
 graph TD
-    C1[Curve] --> L1{Loop};
-    C2[Curve]-->L1;
-    C3[Curve] --> L2{Loop};
-    C4[Curve]-->L2
-    L1 --> S1[Sketch];
-    L2 --> S1[Sketch];
-    C --> |Extrusion,Cut or Join is performed on a sketch.| D[Extrusion];
+    E1[ExtrudeFeature] -->|references| S1[Sketch]
+    S1 --> |profiles| L1{Loop:List};
 ```
 
