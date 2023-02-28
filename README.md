@@ -50,19 +50,19 @@ The keys in the json are described as below.
 ```mermaid
 graph TD;
     subgraph Curve1
-        S1(Start) --> E1(End)
-    end
+        S1(Start) --> E1(End);
+    end;
     subgraph Curve2
-        S2(Start) --> E2(End)
-    end
+        S2(Start) --> E2(End);
+    end;
     subgraph Curve3
-        S3(Start) --> E3(End)
-    end
+        S3(Start) --> E3(End);
+    end;
     subgraph Loop
-        Curve1
-        Curve2
-        Curve3
-    end
+        Curve1;
+        Curve2;
+        Curve3;
+    end;
     Curve1 --> Loop;
     Curve2 --> Loop;
     Curve3 --> Loop;
